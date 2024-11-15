@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class UserController {
 
     @Autowired
@@ -17,53 +18,63 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @GetMapping("/api/users")
+    @GetMapping("/users")
     public List<User> getAllUsers() {
         System.out.println("HERE I AM");
         return userService.getAllUsers();
     }
 
 
-    @GetMapping("/api/users/id/{id}")
+    @GetMapping("/users/id/{id}")
     public User getUserById(@PathVariable Integer id) {
-        return userService.getUserById(id);
+//        return userService.getUserById(id);
+        return null;
     }
 
-    @PutMapping("/api/users/{id}")
-    public User updateUser(@RequestBody User user, @PathVariable Integer id) {
-        return userService.updateUser(user, id);
+
+    @PutMapping("/users/update")
+    public User updateUser(@RequestHeader("Authorization") String jwt, @RequestBody User user) {
+        User getUser = userService.getProfile(jwt);
+        return userService.updateUser(user, getUser.getId());
     }
 
-    @DeleteMapping("/api/users/{id}")
-    public Boolean deleteUser(@PathVariable Integer id) {
-        return userService.deleteUser(id);
+    @DeleteMapping("/users/delete")
+    public String deleteUser(@RequestHeader("Authorization") String jwt) {
+        User getUser = userService.getProfile(jwt);
+        return userService.deleteUser(getUser.getId());
     }
 
-    @GetMapping("/api/users/{username}")
+    @GetMapping("/users/{username}")
     public User findByEmail(@PathVariable String username) {
         return userService.getUserByUsername((username));
     }
 
-    @GetMapping("/api/users/search-user/{query}")
+    @GetMapping("/users/search-user/{query}")
     public List<User> findUser(@PathVariable String query) {
         return userService.searchUser(query);
     }
 
-    @PutMapping("/api/users/send-request/{receiverId}")
-    public String sendRequest(@PathVariable Integer receiverId) {
-        int senderId = 4;
-        return userService.sendRequest(senderId, receiverId);
+    @PutMapping("/users/send-request/{receiverId}")
+    public String sendRequest(@RequestHeader("Authorization") String jwt, @PathVariable Integer receiverId) {
+        User getUser = userService.getProfile(jwt);  // sender
+        return userService.sendRequest(getUser.getId(), receiverId);
     }
 
-    @PutMapping("/api/users/accept-request/{requesterId}")
-    public String acceptRequest(@PathVariable Integer requesterId) {
-        int userId = 3;
-        return userService.acceptRequest(userId, requesterId);
+    @PutMapping("/users/accept-request/{requesterId}")
+    public String acceptRequest(@RequestHeader("Authorization") String jwt, @PathVariable Integer requesterId) {
+        User getUser = userService.getProfile(jwt);
+        return userService.acceptRequest(getUser.getId(), requesterId);
     }
 
-    @GetMapping("/api/users/get-all-friends/{userId}")
-    public List<User> getAllFriends(@PathVariable Integer userId) {
-        return userService.getFriends(userId);
+    @GetMapping("/users/get-all-friends")
+    public List<User> getAllFriends(@RequestHeader("Authorization") String jwt) {
+        User getUser = userService.getProfile(jwt);
+        return userService.getFriends(getUser.getId());
+    }
+
+    @GetMapping("/users/profile")
+    public User getProfile(@RequestHeader("Authorization") String jwt) {
+        return userService.getProfile(jwt);
     }
 
 }

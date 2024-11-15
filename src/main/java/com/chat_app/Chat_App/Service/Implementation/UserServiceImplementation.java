@@ -1,5 +1,6 @@
 package com.chat_app.Chat_App.Service.Implementation;
 
+import com.chat_app.Chat_App.Config.jwtProvider;
 import com.chat_app.Chat_App.Service.UserService;
 import com.chat_app.Chat_App.models.User;
 import com.chat_app.Chat_App.repository.UserRepository;
@@ -13,6 +14,7 @@ public class UserServiceImplementation implements UserService {
 
     @Autowired
     UserRepository userRepository;
+
 
     @Override
     public User registerUser(User user) {
@@ -142,16 +144,23 @@ public class UserServiceImplementation implements UserService {
     }
 
     @Override
-    public Boolean deleteUser(Integer id) {
+    public String deleteUser(Integer id) {
         try {
             if (userRepository.existsById(id)) {
                 userRepository.deleteById(id);
-                return true;
+                return "User deleted successfully";
             } else {
-                return false;
+                return "Error Deleting user";
             }
         } catch (Exception e) {
             throw new RuntimeException("Error deleting user: " + e.getMessage());
         }
+    }
+
+    @Override
+    public User getProfile(String jwt) {
+        String email = jwtProvider.getEmailFromJwtToken(jwt);
+        System.out.println("email: " + email);
+        return userRepository.findByEmail(email);
     }
 }

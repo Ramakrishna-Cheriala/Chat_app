@@ -1,5 +1,6 @@
 package com.chat_app.Chat_App.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public class User {
     private Integer id;
     private String username;
     private String email;
+    @JsonIgnore
     private String password;
     private String number;
 

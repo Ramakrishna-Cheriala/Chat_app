@@ -25,5 +25,7 @@ public interface UserService {
 
     public List<User> getAllUsers();
 
-    public Boolean deleteUser(Integer id);
+    public String deleteUser(Integer id);
+
+    public User getProfile(String jwt);
 }
