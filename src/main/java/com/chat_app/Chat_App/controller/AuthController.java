@@ -36,13 +36,17 @@ public class AuthController {
 
     @PostMapping("/signup")
     public AuthResponce createUser(@RequestBody User user) {
-
+//        System.out.println(user.toString());
         try {
-            User isUserExist = userRepository.findByEmail(user.getEmail());
-            if (isUserExist != null) {
+            User isEmailExist = userRepository.findByEmail(user.getEmail());
+            User isUsernameExist = userRepository.findByUsername(user.getusername());
+            User isNumberExist = userRepository.findByNumber(user.getNumber());
+
+            if (isEmailExist != null || isUsernameExist != null || isNumberExist != null) {
                 throw new Exception("Email already exits");
             }
             user.setPassword(passwordEncoder.encode(user.getPassword())); //encrypting the password
+
             User savedUser = userRepository.save(user);
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(), savedUser.getPassword());

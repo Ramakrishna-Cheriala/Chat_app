@@ -2,18 +2,25 @@ package com.chat_app.Chat_App.Service.Implementation;
 
 import com.chat_app.Chat_App.Config.jwtProvider;
 import com.chat_app.Chat_App.Service.UserService;
+import com.chat_app.Chat_App.models.FriendRequest;
 import com.chat_app.Chat_App.models.User;
+import com.chat_app.Chat_App.repository.FriendRequestRepository;
 import com.chat_app.Chat_App.repository.UserRepository;
+import com.chat_app.Chat_App.responce.UserFriendsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service  // for implementing business logics
 public class UserServiceImplementation implements UserService {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    FriendRequestRepository friendRequestRepository;
 
 
     @Override
@@ -46,16 +53,21 @@ public class UserServiceImplementation implements UserService {
     @Override
     public String sendRequest(Integer senderId, Integer receiverId) {
         try {
+            User senderData = userRepository.findById(senderId)
+                    .orElseThrow(() -> new RuntimeException("Receiver not found"));
             User receiverData = userRepository.findById(receiverId)
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-            List<Integer> requests = receiverData.getRequests();
-            if (!requests.contains(senderId)) {
-                requests.add(senderId);
+            FriendRequest requestExists = friendRequestRepository.existsBySenderIdAndReceiverIdAndStatus(senderId, receiverId, FriendRequest.Status.PENDING);
+            if (requestExists != null) {
+                return "Friend request already sent";
             }
 
-            userRepository.save(receiverData);
-            return "Request sent successfully";
+            FriendRequest friendRequest = new FriendRequest(senderId, receiverId, FriendRequest.Status.PENDING);
+
+            friendRequestRepository.save(friendRequest);
+
+            return "Friend request sent successfully";
         } catch (Exception e) {
             throw new RuntimeException("Error sending friend request: " + e.getMessage());
         }
@@ -63,15 +75,14 @@ public class UserServiceImplementation implements UserService {
 
 
     @Override
-    public List<User> getFriends(Integer userId) {
+    public List<UserFriendsDTO> getFriends(Integer userId) {
         try {
             User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
             List<Integer> friendsIds = user.getFriends();
-
-            List<User> friends = userRepository.findAllById(friendsIds);
-
-            return friends;
+            return userRepository.findAllById(friendsIds).stream()
+                    .map(friend -> new UserFriendsDTO(friend.getusername(), friend.getNumber()))
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving friends", e);
         }
@@ -80,23 +91,29 @@ public class UserServiceImplementation implements UserService {
     @Override
     public String acceptRequest(Integer userId, Integer requesterId) {
         try {
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
             User requester = userRepository.findById(requesterId)
                     .orElseThrow(() -> new RuntimeException("Requester not found with ID: " + requesterId));
 
-            // Check if the request is present
-            List<Integer> requests = user.getRequests();
-            if (!requests.contains(requesterId)) {
-                return "Request not found";
+            FriendRequest friendRequest = friendRequestRepository.existsRequest(userId, requesterId, FriendRequest.Status.PENDING);
+            if (friendRequest == null) {
+                return "No pending friend request found";
             }
 
-            // Add friends and remove the request
+
+            friendRequest.setStatus(FriendRequest.Status.ACCEPTED);
+            friendRequestRepository.save(friendRequest);
+
+
+            // Update friends lists
             user.getFriends().add(requesterId);
             requester.getFriends().add(userId);
-            requests.remove(requesterId); // Remove the requesterId from the user's requests
 
-            // Save changes to the repository
+            user.getReceivedFriendRequest().removeIf(req -> req.getId().equals(friendRequest.getId()));
+            requester.getSentFriendRequest().removeIf(req -> req.getId().equals(friendRequest.getId()));
+
             userRepository.save(user);
             userRepository.save(requester);
 
@@ -105,6 +122,37 @@ public class UserServiceImplementation implements UserService {
             throw new RuntimeException("Error accepting requests", e);
         }
     }
+
+    @Override
+    public String declineRequest(Integer userId, Integer requesterId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+            System.out.println("Receiver: " + user.getusername());
+
+            User requester = userRepository.findById(requesterId)
+                    .orElseThrow(() -> new RuntimeException("Requester not found with ID: " + requesterId));
+            System.out.println("Sender: " + requester.getusername());
+
+            FriendRequest friendRequest = friendRequestRepository.existsRequest(userId, requesterId, FriendRequest.Status.PENDING);
+            if (friendRequest == null) {
+                return "No pending friend request found";
+            }
+
+            user.getReceivedFriendRequest().removeIf(req -> req.getId().equals(friendRequest.getId()));
+            requester.getSentFriendRequest().removeIf(req -> req.getId().equals(friendRequest.getId()));
+
+            friendRequestRepository.delete(friendRequest);
+
+            userRepository.save(user);
+            userRepository.save(requester);
+
+            return "Request declined";
+        } catch (Exception e) {
+            throw new RuntimeException("Error declining requests", e);
+        }
+    }
+
 
     @Override
     public User updateUser(User user, Integer id) {

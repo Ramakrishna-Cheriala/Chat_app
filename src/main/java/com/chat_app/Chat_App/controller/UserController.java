@@ -3,6 +3,7 @@ package com.chat_app.Chat_App.controller;
 import com.chat_app.Chat_App.Service.UserService;
 import com.chat_app.Chat_App.models.User;
 import com.chat_app.Chat_App.repository.UserRepository;
+import com.chat_app.Chat_App.responce.UserFriendsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,8 +67,14 @@ public class UserController {
         return userService.acceptRequest(getUser.getId(), requesterId);
     }
 
+    @PutMapping("/users/decline-request/{requesterId}")
+    public String declineRequest(@RequestHeader("Authorization") String jwt, @PathVariable Integer requesterId) {
+        User getUser = userService.getProfile(jwt);
+        return userService.declineRequest(getUser.getId(), requesterId);
+    }
+
     @GetMapping("/users/get-all-friends")
-    public List<User> getAllFriends(@RequestHeader("Authorization") String jwt) {
+    public List<UserFriendsDTO> getAllFriends(@RequestHeader("Authorization") String jwt) {
         User getUser = userService.getProfile(jwt);
         return userService.getFriends(getUser.getId());
     }

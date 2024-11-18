@@ -22,9 +22,8 @@ public class jwtValidator extends OncePerRequestFilter {
 
         if (jwt != null) {
             try {
-                
+
                 String email = jwtProvider.getEmailFromJwtToken(jwt);
-                System.out.println("email: " + email);
                 List<GrantedAuthority> authorities = new ArrayList<>();
 
                 Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
