@@ -24,23 +24,29 @@ public class Chat {
 
     private ChatType chatType;
 
-    @ManyToMany
-    @JoinTable(
-            name = "chat_users",
-            joinColumns = @JoinColumn(name = "chat_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
-    private List<User> users = new ArrayList<>();
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChatParticipant> participants = new ArrayList<>();
 
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages = new ArrayList<>();
 
     private LocalDateTime timeStamp;
 
-    public Chat(Integer id, String chat_name, ChatType chatType, List<User> users, List<Message> messages, LocalDateTime timeStamp) {
+    public void addParticipant(ChatParticipant participant) {
+        participants.add(participant);
+        participant.setChat(this);
+    }
+
+    public void removeParticipant(ChatParticipant participant) {
+        participants.remove(participant);
+        participant.setChat(null);
+    }
+
+    public Chat(Integer id, String chat_name, ChatType chatType, List<ChatParticipant> participants, List<Message> messages, LocalDateTime timeStamp) {
         this.id = id;
         Chat_name = chat_name;
         this.chatType = chatType;
-        this.users = users;
+        this.participants = participants;
         this.messages = messages;
         this.timeStamp = timeStamp;
     }
@@ -69,12 +75,12 @@ public class Chat {
         this.chatType = chatType;
     }
 
-    public List<User> getUsers() {
-        return users;
+    public List<ChatParticipant> getParticipants() {
+        return participants;
     }
 
-    public void setUsers(List<User> users) {
-        this.users = users;
+    public void setParticipants(List<ChatParticipant> participants) {
+        this.participants = participants;
     }
 
     public List<Message> getMessages() {

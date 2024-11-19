@@ -52,7 +52,7 @@ public class AuthController {
             Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(), savedUser.getPassword());
             String token = jwtProvider.generateToken(authentication);
 
-            AuthResponce authResponce = new AuthResponce(token, "User register successfully");
+            AuthResponce authResponce = new AuthResponce(token, "User register successfully", true);
 
             return authResponce;
         } catch (Exception e) {
@@ -65,7 +65,7 @@ public class AuthController {
         Authentication authentication = authenticate(loginRequest.getEmail(), loginRequest.getPassword());
         String token = jwtProvider.generateToken(authentication);
 
-        AuthResponce authResponce = new AuthResponce(token, "Login successfully");
+        AuthResponce authResponce = new AuthResponce(token, "Login successfully", true);
 
         return authResponce;
 

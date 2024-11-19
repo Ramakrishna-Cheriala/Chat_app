@@ -9,17 +9,22 @@ public class FriendRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
-    @Column(name = "sender_id", nullable = false)
-    private Integer senderId;
+    @ManyToOne
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
-    @Column(name = "receiver_id", nullable = false)
-    private Integer receiverId;
+    @ManyToOne
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
+
+    public FriendRequest(User sender, User receiver, Status status) {
+    }
 
     public enum Status {
         PENDING,
@@ -31,36 +36,35 @@ public class FriendRequest {
     public FriendRequest() {
     }
 
-    // Parameterized constructor
-    public FriendRequest(Integer senderId, Integer receiverId, Status status) {
-        this.senderId = senderId;
-        this.receiverId = receiverId;
+    public FriendRequest(Integer id, User sender, User receiver, Status status) {
+        this.id = id;
+        this.sender = sender;
+        this.receiver = receiver;
         this.status = status;
     }
 
-    // Getters and setters
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public Integer getSenderId() {
-        return senderId;
+    public User getSender() {
+        return sender;
     }
 
-    public void setSenderId(Integer senderId) {
-        this.senderId = senderId;
+    public void setSender(User sender) {
+        this.sender = sender;
     }
 
-    public Integer getReceiverId() {
-        return receiverId;
+    public User getReceiver() {
+        return receiver;
     }
 
-    public void setReceiverId(Integer receiverId) {
-        this.receiverId = receiverId;
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
     }
 
     public Status getStatus() {

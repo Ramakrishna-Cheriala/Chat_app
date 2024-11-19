@@ -2,15 +2,21 @@ package com.chat_app.Chat_App.Service.Implementation;
 
 import com.chat_app.Chat_App.Config.jwtProvider;
 import com.chat_app.Chat_App.Service.UserService;
+import com.chat_app.Chat_App.models.Chat;
+import com.chat_app.Chat_App.models.ChatParticipant;
 import com.chat_app.Chat_App.models.FriendRequest;
 import com.chat_app.Chat_App.models.User;
+import com.chat_app.Chat_App.repository.ChatRepository;
 import com.chat_app.Chat_App.repository.FriendRequestRepository;
 import com.chat_app.Chat_App.repository.UserRepository;
 import com.chat_app.Chat_App.responce.UserFriendsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service  // for implementing business logics
@@ -21,6 +27,9 @@ public class UserServiceImplementation implements UserService {
 
     @Autowired
     FriendRequestRepository friendRequestRepository;
+
+    @Autowired
+    ChatRepository chatRepository;
 
 
     @Override
@@ -58,12 +67,15 @@ public class UserServiceImplementation implements UserService {
             User receiverData = userRepository.findById(receiverId)
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-            FriendRequest requestExists = friendRequestRepository.existsBySenderIdAndReceiverIdAndStatus(senderId, receiverId, FriendRequest.Status.PENDING);
+            FriendRequest requestExists = friendRequestRepository.findBySenderAndReceiverAndStatus(senderData, receiverData, FriendRequest.Status.PENDING);
             if (requestExists != null) {
                 return "Friend request already sent";
             }
 
-            FriendRequest friendRequest = new FriendRequest(senderId, receiverId, FriendRequest.Status.PENDING);
+            FriendRequest friendRequest = new FriendRequest();
+            friendRequest.setSender(senderData);
+            friendRequest.setReceiver(receiverData);
+            friendRequest.setStatus(FriendRequest.Status.PENDING);
 
             friendRequestRepository.save(friendRequest);
 
@@ -77,11 +89,15 @@ public class UserServiceImplementation implements UserService {
     @Override
     public List<UserFriendsDTO> getFriends(Integer userId) {
         try {
-            User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+            // Retrieve the user from the repository
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-            List<Integer> friendsIds = user.getFriends();
-            return userRepository.findAllById(friendsIds).stream()
-                    .map(friend -> new UserFriendsDTO(friend.getusername(), friend.getNumber()))
+            Set<User> friends = user.getFriends();
+
+
+            return friends.stream()
+                    .map(friend -> new UserFriendsDTO(friend.getusername(), friend.getNumber())) // Ensure you use the correct getter names
                     .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving friends", e);
@@ -97,7 +113,7 @@ public class UserServiceImplementation implements UserService {
             User requester = userRepository.findById(requesterId)
                     .orElseThrow(() -> new RuntimeException("Requester not found with ID: " + requesterId));
 
-            FriendRequest friendRequest = friendRequestRepository.existsRequest(userId, requesterId, FriendRequest.Status.PENDING);
+            FriendRequest friendRequest = friendRequestRepository.findBySenderAndReceiverAndStatus(requester, user, FriendRequest.Status.PENDING);
             if (friendRequest == null) {
                 return "No pending friend request found";
             }
@@ -108,14 +124,16 @@ public class UserServiceImplementation implements UserService {
 
 
             // Update friends lists
-            user.getFriends().add(requesterId);
-            requester.getFriends().add(userId);
+            user.getFriends().add(requester);
+            requester.getFriends().add(user);
 
             user.getReceivedFriendRequest().removeIf(req -> req.getId().equals(friendRequest.getId()));
             requester.getSentFriendRequest().removeIf(req -> req.getId().equals(friendRequest.getId()));
 
             userRepository.save(user);
             userRepository.save(requester);
+
+            createPrivateChat(user, requester);
 
             return "Request accepted";
         } catch (Exception e) {
@@ -134,7 +152,7 @@ public class UserServiceImplementation implements UserService {
                     .orElseThrow(() -> new RuntimeException("Requester not found with ID: " + requesterId));
             System.out.println("Sender: " + requester.getusername());
 
-            FriendRequest friendRequest = friendRequestRepository.existsRequest(userId, requesterId, FriendRequest.Status.PENDING);
+            FriendRequest friendRequest = friendRequestRepository.findBySenderAndReceiverAndStatus(user, requester, FriendRequest.Status.PENDING);
             if (friendRequest == null) {
                 return "No pending friend request found";
             }
@@ -208,7 +226,41 @@ public class UserServiceImplementation implements UserService {
     @Override
     public User getProfile(String jwt) {
         String email = jwtProvider.getEmailFromJwtToken(jwt);
-        System.out.println("email: " + email);
+//        System.out.println("email: " + email);
         return userRepository.findByEmail(email);
+    }
+
+
+    private Chat createPrivateChat(User user1, User user2) {
+        // Check if a private chat already exists
+        Optional<Chat> existingChat = chatRepository.findPrivateChat(user1, user2, Chat.ChatType.PRIVATE);
+        if (existingChat.isPresent()) {
+            return existingChat.get(); // Return existing chat if found
+        }
+
+        // Create a new private chat
+        Chat newChat = new Chat();
+        newChat.setChatType(Chat.ChatType.PRIVATE);
+        newChat.setTimeStamp(LocalDateTime.now());
+
+        // Add participants with custom names
+        ChatParticipant participant1 = new ChatParticipant();
+        participant1.setUser(user1);
+        participant1.setChat(newChat);
+        participant1.setCustomChatName(user2.getusername()); // User1 sees User2's name
+
+        ChatParticipant participant2 = new ChatParticipant();
+        participant2.setUser(user2);
+        participant2.setChat(newChat);
+        participant2.setCustomChatName(user1.getusername()); // User2 sees User1's name
+
+        newChat.setParticipants(List.of(participant1, participant2));
+
+        System.out.println("creating chat-------------");
+        Chat savedChat = chatRepository.save(newChat);
+        System.out.println("chat created successfully");
+
+        // Save the new chat
+        return savedChat;
     }
 }

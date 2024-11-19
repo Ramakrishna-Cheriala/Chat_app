@@ -6,14 +6,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
+    
+    @Query("SELECT c FROM Chat c " +
+            "JOIN c.participants cp1 " +
+            "JOIN c.participants cp2 " +
+            "WHERE c.chatType = :type " +
+            "AND cp1.user = :user1 " +
+            "AND cp2.user = :user2")
+    Optional<Chat> findPrivateChat(@Param("user1") User user1,
+                                   @Param("user2") User user2,
+                                   @Param("type") Chat.ChatType type);
 
-    @Query("SELECT c FROM Chat c WHERE c.chatType = :type AND :user1 MEMBER OF c.users AND :user2 MEMBER OF c.users")
-    Optional<Chat> findPrivateChat(User user1, User user2, Chat.ChatType type);
 
-    @Query("SELECT c FROM Chat c WHERE :user MEMBER OF c.users")
-    List<Chat> findAllChatsByUser(@Param("user") User user);
 }

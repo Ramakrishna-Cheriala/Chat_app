@@ -4,11 +4,17 @@ public class AuthResponce {
 
     private String token;
     private String message;
+    private boolean success;
 
     public AuthResponce() {
 
     }
 
+    public AuthResponce(String token, String message, boolean success) {
+        this.token = token;
+        this.message = message;
+        this.success = success;
+    }
 
     public String getToken() {
         return token;
@@ -26,8 +32,11 @@ public class AuthResponce {
         this.message = message;
     }
 
-    public AuthResponce(String token, String message) {
-        this.token = token;
-        this.message = message;
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
     }
 }

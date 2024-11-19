@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface MessageService {
 
-    public Chat getOrCreatePrivateChat(Integer user1_id, Integer user2_id);
+    public Chat getPrivateChat(Integer user1_id, Integer user2_id);
 
     public List<MessageDTO> getAllMessages(Integer chatId);
 
