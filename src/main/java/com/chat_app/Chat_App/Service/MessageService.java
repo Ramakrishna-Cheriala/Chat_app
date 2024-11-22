@@ -17,4 +17,6 @@ public interface MessageService {
 
     public List<ChatDTO> getAllChatsOfUser(Integer userId);
 
+    public ChatDTO getChatDetails(Integer id, Integer chatId);
+
 }

@@ -31,4 +31,6 @@ public interface UserService {
     public String deleteUser(Integer id);
 
     public User getProfile(String jwt);
+
+    public List<UserFriendsDTO> getSearchFriends(Integer id, String query);
 }

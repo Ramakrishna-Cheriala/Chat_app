@@ -97,7 +97,13 @@ public class UserServiceImplementation implements UserService {
 
 
             return friends.stream()
-                    .map(friend -> new UserFriendsDTO(friend.getusername(), friend.getNumber())) // Ensure you use the correct getter names
+                    .map(friend -> {
+                        Chat privateChat = chatRepository
+                                .findPrivateChat(user, friend, Chat.ChatType.PRIVATE)
+                                .orElse(null);
+                        Integer chatId = privateChat != null ? privateChat.getId() : null;
+                        return new UserFriendsDTO(friend.getId(), friend.getusername(), friend.getNumber(), chatId);
+                    }) // Ensure you use the correct getter names
                     .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving friends", e);
@@ -228,6 +234,42 @@ public class UserServiceImplementation implements UserService {
         String email = jwtProvider.getEmailFromJwtToken(jwt);
 //        System.out.println("email: " + email);
         return userRepository.findByEmail(email);
+    }
+
+    @Override
+    public List<UserFriendsDTO> getSearchFriends(Integer id, String query) {
+        if (query.length() > 2) {
+            // Fetch the user
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Get the user's friends
+            Set<User> friends = user.getFriends();
+
+            // Filter friends based on the search query (case-insensitive)
+            List<UserFriendsDTO> filteredFriends = friends.stream()
+                    .filter(friend -> friend.getusername().toLowerCase().contains(query.toLowerCase()))
+                    .map(friend -> {
+                        // Fetch the private chat ID if it exists
+                        Chat privateChat = chatRepository
+                                .findPrivateChat(user, friend, Chat.ChatType.PRIVATE)
+                                .orElse(null);
+                        Integer chatId = privateChat != null ? privateChat.getId() : null;
+
+                        // Map friend to UserFriendsDTO
+                        return new UserFriendsDTO(
+                                friend.getId(),
+                                friend.getusername(),
+                                friend.getEmail(),
+                                chatId
+                        );
+                    })
+                    .collect(Collectors.toList());
+
+            return filteredFriends;
+        }
+
+        return List.of(); // Return an empty list if the query is too short
     }
 
 

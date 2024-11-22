@@ -95,12 +95,44 @@ public class MessageServiceImplementation implements MessageService {
         // Fetch all ChatParticipants for the user to get personalized chat names
         List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByUser(user);
 
-        return chatParticipants.stream().map(participant -> new ChatDTO(
-                participant.getChat().getId(),
-                participant.getCustomChatName(), // Personalized chat name for the user
-                participant.getChat().getChatType(),
-                participant.getChat().getTimeStamp()
-        )).collect(Collectors.toList());
+
+        return chatParticipants.stream()
+                .map(participant -> participant.getChat())
+                .filter(chat -> !chat.getMessages().isEmpty())  // Only keep chats with at least one message
+                .map(chat -> {
+                    // Find the other participant's custom name
+                    String otherParticipantName = chat.getParticipants().stream()
+                            .filter(p -> p.getUser().equals(user)) // Find the participant that is not the current user
+                            .findFirst()
+                            .map(ChatParticipant::getCustomChatName)  // Get the custom chat name
+                            .orElse("Unknown");  // Default name if the other participant is not found
+
+                    return new ChatDTO(
+                            chat.getId(),
+                            otherParticipantName,  // The name of the other participant
+                            chat.getChatType(),
+                            chat.getTimeStamp()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ChatDTO getChatDetails(Integer id, Integer chatId) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new RuntimeException("Chat not found"));
+        String otherParticipantName = chat.getParticipants().stream()
+                .filter(p -> p.getUser().equals(user)) // Find the participant that is not the current user
+                .findFirst()
+                .map(ChatParticipant::getCustomChatName)  // Get the custom chat name
+                .orElse("Unknown");
+        return new ChatDTO(
+                chat.getId(),
+                otherParticipantName,  // The name of the other participant
+                chat.getChatType(),
+                chat.getTimeStamp()
+        );
     }
 
 

@@ -38,4 +38,10 @@ public class MessageController {
         User user = userService.getProfile(jwt);
         return messageService.getAllChatsOfUser(user.getId());
     }
+
+    @GetMapping("/get-chat/{id}")
+    public ChatDTO getChatDetails(@RequestHeader("Authorization") String jwt, @PathVariable Integer id) {
+        User user = userService.getProfile(jwt);
+        return messageService.getChatDetails(user.getId(), id);
+    }
 }

@@ -1,5 +1,6 @@
 package com.chat_app.Chat_App.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -8,6 +9,7 @@ public class ChatParticipant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @JsonIgnore
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "chat_id")
     private Chat chat;

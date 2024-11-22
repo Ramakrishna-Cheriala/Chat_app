@@ -84,4 +84,10 @@ public class UserController {
         return userService.getProfile(jwt);
     }
 
+    @GetMapping("/users/search-friends/{query}")
+    public List<UserFriendsDTO> getSearchFriends(@RequestHeader("Authorization") String jwt, @PathVariable String query) {
+        User getUser = userService.getProfile(jwt);
+        return userService.getSearchFriends(getUser.getId(), query);
+    }
+
 }

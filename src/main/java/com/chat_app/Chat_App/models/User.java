@@ -40,6 +40,7 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "friend_id"))
     private Set<User> friends = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatParticipant> chatParticipants = new ArrayList<>();
 
