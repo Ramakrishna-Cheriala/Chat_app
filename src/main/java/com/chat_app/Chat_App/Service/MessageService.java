@@ -1,7 +1,6 @@
 package com.chat_app.Chat_App.Service;
 
 
-import com.chat_app.Chat_App.models.Chat;
 import com.chat_app.Chat_App.responce.ChatDTO;
 import com.chat_app.Chat_App.responce.MessageDTO;
 
@@ -9,11 +8,11 @@ import java.util.List;
 
 public interface MessageService {
 
-    public Chat getPrivateChat(Integer user1_id, Integer user2_id);
+    public ChatDTO getPrivateChat(Integer user1_id, Integer user2_id);
 
-    public List<MessageDTO> getAllMessages(Integer chatId);
+    List<MessageDTO> getAllMessages(Integer chatId, int page, int size);
 
-    public String sendMessage(Integer sender, Integer receiver, String content);
+    public MessageDTO sendMessage(Integer sender, Integer receiver, String content);
 
     public List<ChatDTO> getAllChatsOfUser(Integer userId);
 

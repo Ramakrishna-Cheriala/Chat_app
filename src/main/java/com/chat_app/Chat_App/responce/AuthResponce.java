@@ -1,19 +1,16 @@
 package com.chat_app.Chat_App.responce;
 
+import com.chat_app.Chat_App.models.User;
+
 public class AuthResponce {
 
     private String token;
     private String message;
     private boolean success;
+    private User user;
 
     public AuthResponce() {
 
-    }
-
-    public AuthResponce(String token, String message, boolean success) {
-        this.token = token;
-        this.message = message;
-        this.success = success;
     }
 
     public String getToken() {
@@ -38,5 +35,20 @@ public class AuthResponce {
 
     public void setSuccess(boolean success) {
         this.success = success;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public AuthResponce(String token, String message, boolean success, User user) {
+        this.token = token;
+        this.message = message;
+        this.success = success;
+        this.user = user;
     }
 }
